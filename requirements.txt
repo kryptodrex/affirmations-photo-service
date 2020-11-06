@@ -1,0 +1,6 @@
+flask
+json
+requests
+random
+os
+dotenv
