@@ -1,13 +1,16 @@
 import requests
 import json
 import random
+import os
 
 import apiEndpoints as endpoint
-import localConfig as config
 
-configs = {
-    'languageApiKey': config.languageApi_key,
-    'unsplashApiKey': config.unsplash_key
+from dotenv import load_dotenv
+load_dotenv()
+
+keys = {
+    'languageApiKey': os.getenv("LANGUAGES_APIKEY"),
+    'unsplashApiKey': os.getenv("UNSPLASH_APIKEY")
 }
 
 
@@ -29,7 +32,7 @@ def analyzeTextEntities(input):
         url=endpoint.languageApi + '/documents:analyzeEntities', 
         data=jsonBody, 
         params={
-            'key': configs['languageApiKey']
+            'key': keys['languageApiKey']
         }
     )
 
@@ -44,7 +47,7 @@ def searchPictures(search, size):
             'per_page': 50
         },
         headers={
-            'Authorization': 'Client-ID ' + configs['unsplashApiKey']
+            'Authorization': 'Client-ID ' + keys['unsplashApiKey']
         }
     )).json()
 
