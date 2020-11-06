@@ -1,5 +1,3 @@
 flask
 requests
-random
-os
 dotenv
