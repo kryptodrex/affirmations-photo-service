@@ -1,10 +1,12 @@
 from flask import Flask, request, abort
+from flask_cors import CORS
 import json
 import base64
 
 import apiCalls as api
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 
 basePath = '/api/v1'
 
