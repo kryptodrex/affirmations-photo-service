@@ -1,5 +1,6 @@
 from flask import Flask, request, abort
 import json
+import base64
 
 import apiCalls as api
 
@@ -13,23 +14,32 @@ def service_status():
 
 @app.route(basePath + '/affirmation', methods=['GET'])
 def get_affirmation():
-    data = api.affirmations()
+    reloadToken = request.args.get('reloadToken')
+    data = api.affirmations(reloadToken)
     return data
 
+# Analyze the text for its entities
 @app.route(basePath + '/analyze-entities', methods=['POST'])
 def post_text():
     data = api.analyzeTextEntities(json.loads(request.data))
     return data
 
+# Retrieve a random photo based on search query
 @app.route(basePath + '/photos', methods=['GET'])
-def get_photoSearch():
+def get_photos():
     queries = {
         'search': request.args.get('search'),
         'size': request.args.get('size')
     }
-    # print(queries)
     
-    data = api.searchPictures(queries['search'],queries['size'])
+    data = api.searchPhotos(queries['search'],queries['size'])
+    return data
+
+# Retrieve a photo by its ID
+@app.route(basePath + '/photos/<photoId>', methods=['GET'])
+def get_photoById(photoId):
+    size = request.args.get('size')
+    data = api.getPhotoById(photoId, size)
     return data
 
 ### Error handling ###

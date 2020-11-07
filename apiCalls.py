@@ -1,6 +1,7 @@
 import requests
 import json
 import random
+import base64
 import os
 
 import apiEndpoints as endpoint
@@ -14,10 +15,32 @@ keys = {
 }
 
 
-def affirmations():
-    response = requests.get(endpoint.affirmations)
-    return response.json()
+def affirmations(token):
+    reloadToken = str(token)
 
+    # Check if there is a reloadToken (base64 encoded affirmation text)
+    if (reloadToken == 'None'):
+        # Get a new affirmation from API
+        response = (requests.get(endpoint.affirmations)).json()
+    
+        affirmationText = response['affirmation'].replace("'","\'")
+        print(affirmationText)
+
+        message_bytes = affirmationText.encode()
+        base64_bytes = base64.b64encode(message_bytes)
+        reloadToken = base64_bytes.decode()
+    else:
+        # Decode the existing reloadToken into its affirmation text
+        base64_bytes = reloadToken.encode()
+        message_bytes = base64.b64decode(base64_bytes)
+        affirmationText = message_bytes.decode()
+
+    return {
+        'affirmation': affirmationText,
+        'reloadToken': reloadToken
+    }
+
+# Calls the Google Cloud NLP API to extract entities
 def analyzeTextEntities(input):
     jsonBody = json.dumps({
         'document': {
@@ -28,17 +51,25 @@ def analyzeTextEntities(input):
     })
 
     # Call Google language API to get entities from text    
-    response = requests.post(
+    response = (requests.post(
         url=endpoint.languageApi + '/documents:analyzeEntities', 
         data=jsonBody, 
         params={
             'key': keys['languageApiKey']
         }
-    )
+    )).json()
 
-    return response.json()
+    if (len(response['entities']) != 0):
+        responseText = response['entities'][0]['name']
+    else: 
+        responseText = ""
 
-def searchPictures(search, size):
+    return {
+        'result': responseText
+    }
+
+# Calls Unsplash's photo API to retrieve a photo based on search query
+def searchPhotos(search, size):
     response = (requests.get(
         url=endpoint.unsplash + '/search/photos',
         params={
@@ -51,15 +82,27 @@ def searchPictures(search, size):
         }
     )).json()
 
-    choosePhoto = random.choice(response['results'])
+    return returnPhotoData(random.choice(response['results']), size)
 
-    photoData = {
-        'url': choosePhoto['urls'][size],
+# Calls Unsplash photo API to get one photo by its ID
+def getPhotoById(photoId, size):
+    response = (requests.get(
+        url=endpoint.unsplash + '/photos/' + photoId,
+        headers={
+            'Authorization': 'Client-ID ' + keys['unsplashApiKey']
+        }
+    )).json()
+
+    return returnPhotoData(response, size)
+
+# Create the response for the photo data
+def returnPhotoData(data, size):
+    return {
+        'photo_id': data['id'],
+        'url': data['urls'][size],
         'user': {
-            'name': choosePhoto['user']['name'],
-            'portfolio': choosePhoto['user']['portfolio_url'],
-            'profile': choosePhoto['user']['links']['html']
+            'name': data['user']['name'],
+            'portfolio': data['user']['portfolio_url'],
+            'profile': data['user']['links']['html']
         }
     }
-
-    return photoData
