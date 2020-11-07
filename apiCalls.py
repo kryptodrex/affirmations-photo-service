@@ -22,22 +22,33 @@ def affirmations(token):
     if (reloadToken == 'None'):
         # Get a new affirmation from API
         response = (requests.get(endpoint.affirmations)).json()
-    
-        affirmationText = response['affirmation'].replace("'","\'")
-        print(affirmationText)
+        affirmationText = response['affirmation']
 
-        message_bytes = affirmationText.encode()
+        entity = (analyzeTextEntities(affirmationText))['result']
+        # affirmationText = response['affirmation'].replace("'","\'")
+        # print(affirmationText)
+
+        if (entity != ""):
+            strToEncode = affirmationText + ':' + entity
+        else:
+            strToEncode = affirmationText
+
+        message_bytes = strToEncode.encode()
         base64_bytes = base64.b64encode(message_bytes)
         reloadToken = base64_bytes.decode()
     else:
-        # Decode the existing reloadToken into its affirmation text
+        # Decode the existing reloadToken into its affirmation text and entity
         base64_bytes = reloadToken.encode()
         message_bytes = base64.b64decode(base64_bytes)
-        affirmationText = message_bytes.decode()
+        decodedStr = message_bytes.decode()
+        
+        affirmationText = decodedStr.split(":")[0]
+        entity = decodedStr.split(":")[1]
 
     return {
         'affirmation': affirmationText,
-        'reloadToken': reloadToken
+        'reloadToken': reloadToken,
+        'entity': entity
     }
 
 # Calls the Google Cloud NLP API to extract entities
