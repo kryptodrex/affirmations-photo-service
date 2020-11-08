@@ -25,9 +25,14 @@ def affirmations(token):
         response = (requests.get(endpoint.affirmations)).json()
         affirmationText = response['affirmation']
 
-        entity = (analyzeTextEntities({
+        entityArray = (analyzeTextEntities({
             'text': affirmationText
-        }))['result']
+        }))['entities']
+
+        if (len(entityArray) != 0):
+            entity = entityArray.pop(0)
+        else:
+            entity = ""
         # affirmationText = response['affirmation'].replace("'","\'")
         # print(affirmationText)
 
@@ -51,7 +56,8 @@ def affirmations(token):
     return {
         'affirmation': affirmationText,
         'reloadToken': reloadToken,
-        'entity': entity
+        'top_entity': entity,
+        'other_entities': entityArray
     }
 
 # Calls the Google Cloud NLP API to extract entities
@@ -73,13 +79,19 @@ def analyzeTextEntities(textToAnalyze):
         }
     )).json()
 
+    entityArray = []
     if (len(response['entities']) != 0):
-        responseText = response['entities'][0]['name']
-    else: 
-        responseText = ""
+        for ent in response['entities']:
+            entityArray.append(ent['name'])
+        # responseText = response['entities'][0]['name']
+    # else: 
+    #     entityArray.append({
+    #         "name": "",
+    #         "salience": ""
+    #     })
 
     return {
-        'result': responseText
+        'entities': entityArray
     }
 
 # Calls Unsplash's photo API to retrieve a photo based on search query
@@ -96,7 +108,13 @@ def searchPhotos(search, size):
         }
     )).json()
 
-    return returnPhotoData(random.choice(response['results']), size)
+    if (response['total'] != 0):
+         return returnPhotoData(random.choice(response['results']), size)
+    else:
+        return {
+            "message": "No photos found for search",
+            "foundPhoto": 0
+        }
 
 # Calls Unsplash photo API to get one photo by its ID
 def getPhotoById(photoId, size):
@@ -126,6 +144,7 @@ def downloadPhoto(photoId):
 def returnPhotoData(data, size):
     return {
         'alt_description': '' if 'None' else data['alt_description'],
+        "foundPhoto": 1,
         'photo_id': data['id'],
         'urls': {
             'direct': data['urls'][size],
