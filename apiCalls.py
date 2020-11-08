@@ -3,6 +3,7 @@ import json
 import random
 import base64
 import os
+import zlib
 
 import apiEndpoints as endpoint
 
@@ -22,30 +23,43 @@ def affirmations(token):
     if (reloadToken == 'None'):
         # Get a new affirmation from API
         response = (requests.get(endpoint.affirmations)).json()
-    
-        affirmationText = response['affirmation'].replace("'","\'")
-        print(affirmationText)
+        affirmationText = response['affirmation']
 
-        message_bytes = affirmationText.encode()
+        entity = (analyzeTextEntities({
+            'text': affirmationText
+        }))['result']
+        # affirmationText = response['affirmation'].replace("'","\'")
+        # print(affirmationText)
+
+        if (entity != ""):
+            strToEncode = affirmationText + '|' + entity
+        else:
+            strToEncode = affirmationText + '|'
+
+        message_bytes = strToEncode.encode()
         base64_bytes = base64.b64encode(message_bytes)
         reloadToken = base64_bytes.decode()
     else:
-        # Decode the existing reloadToken into its affirmation text
+        # Decode the existing reloadToken into its affirmation text and entity
         base64_bytes = reloadToken.encode()
         message_bytes = base64.b64decode(base64_bytes)
-        affirmationText = message_bytes.decode()
+        decodedStr = message_bytes.decode()
+        
+        affirmationText = decodedStr.split("|")[0]
+        entity = decodedStr.split("|")[1]
 
     return {
         'affirmation': affirmationText,
-        'reloadToken': reloadToken
+        'reloadToken': reloadToken,
+        'entity': entity
     }
 
 # Calls the Google Cloud NLP API to extract entities
-def analyzeTextEntities(input):
+def analyzeTextEntities(textToAnalyze):
     jsonBody = json.dumps({
         'document': {
             'type': 'PLAIN_TEXT',
-            'content': input['text']
+            'content': textToAnalyze['text']
         },
         'encodingType': 'UTF8'
     })
@@ -95,14 +109,32 @@ def getPhotoById(photoId, size):
 
     return returnPhotoData(response, size)
 
+# Trigger download for photo
+def downloadPhoto(photoId):
+    response = (requests.get(
+        url=endpoint.unsplash + '/photos/' + photoId + '/download',
+        headers={
+            'Authorization': 'Client-ID ' + keys['unsplashApiKey']
+        }
+    )).json()
+    return {
+        'message': 'Download successful',
+        'link': response['url']
+    }
+
 # Create the response for the photo data
 def returnPhotoData(data, size):
     return {
+        'alt_description': '' if 'None' else data['alt_description'],
         'photo_id': data['id'],
-        'url': data['urls'][size],
+        'urls': {
+            'direct': data['urls'][size],
+            'download': data['links']['download'],
+            'html': data['links']['html']
+        },
         'user': {
             'name': data['user']['name'],
-            'portfolio': data['user']['portfolio_url'],
+            'portfolio': '' if 'None' else data['user']['portfolio_url'],
             'profile': data['user']['links']['html']
         }
     }
