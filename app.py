@@ -7,7 +7,7 @@ import os
 import apiCalls as api
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/api/v1/*": {"origins": "*")}})
+cors = CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 
 basePath = '/api/v1'
 
