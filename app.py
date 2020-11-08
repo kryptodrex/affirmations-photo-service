@@ -7,17 +7,19 @@ import os
 import apiCalls as api
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+cors = CORS(app, resources={r"/api/v1/*": {"origins": os.getenv("CORS_ORIGIN")}})
 
 basePath = '/api/v1'
 
 @app.route(basePath + '/')
 def service_status():
+    # print(request.environ.get('HTTP_ORIGIN', 'default value'))
     return 'Service is up and working!'
 
 @app.route(basePath + '/affirmation', methods=['GET'])
 def get_affirmation():
     print('log: get affirmation')
+    # print(request.environ)
     reloadToken = request.args.get('reloadToken')
     data = api.affirmations(reloadToken)
     return data
@@ -55,6 +57,7 @@ def get_downloadPhoto(photoId):
     print('log: download photo')
     data = api.downloadPhoto(photoId)
     return data
+
 
 ### Error handling ###
 @app.errorhandler(400)
