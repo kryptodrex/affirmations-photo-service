@@ -44,6 +44,13 @@ def affirmations(token):
         message_bytes = strToEncode.encode()
         base64_bytes = base64.b64encode(message_bytes)
         reloadToken = base64_bytes.decode()
+
+        return {
+            'affirmation': affirmationText,
+            'reloadToken': reloadToken,
+            'top_entity': entity,
+            'other_entities': entityArray
+        }
     else:
         # Decode the existing reloadToken into its affirmation text and entity
         base64_bytes = reloadToken.encode()
@@ -53,12 +60,12 @@ def affirmations(token):
         affirmationText = decodedStr.split("|")[0]
         entity = decodedStr.split("|")[1]
 
-    return {
-        'affirmation': affirmationText,
-        'reloadToken': reloadToken,
-        'top_entity': entity,
-        'other_entities': entityArray
-    }
+        return {
+            'affirmation': affirmationText,
+            'reloadToken': reloadToken,
+            'top_entity': entity,
+            'other_entities': []
+        }
 
 # Calls the Google Cloud NLP API to extract entities
 def analyzeTextEntities(textToAnalyze):
