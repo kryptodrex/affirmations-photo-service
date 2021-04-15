@@ -7,8 +7,10 @@ import os
 import apiCalls as api
 
 app = Flask(__name__)
+
+origin_whitelist = os.getenv("CORS_ORIGIN").split(',')
 # cors = CORS(app, resources={r"/api/v1/*": {"origins": os.getenv("CORS_ORIGIN")}})
-cors = CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+cors = CORS(app, resources={r"/api/v1/*": {"origins": origin_whitelist}})
 
 basePath = '/api/v1'
 
